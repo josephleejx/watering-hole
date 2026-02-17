@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Tap Tap Defence</title>
+    <style>
+        :root {
+            /* Solar Slate Theme */
+            --bg: #0f172a; --accent: #f59e0b; --secondary: #334155; --text: #ffffff;
+            --header-h: 64px; --arena-size: 300px; --btn-size: 61px; --ball-size: 12px; --tag-size: 36px;
+        }
+        html, body { margin: 0; padding: 0; width: 100%; height: 100%; background-color: var(--bg); color: var(--text); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; overflow: hidden; touch-action: none; }
+        #main-wrapper { display: flex; flex-direction: column; width: 100%; height: 100%; position: relative; }
+
+        /* Standard Header */
+        #control-pane { height: var(--header-h); width: 100%; background: #1e293b; display: flex; justify-content: space-between; align-items: center; padding: 0 16px; box-sizing: border-box; z-index: 100; border-bottom: 2px solid var(--secondary); }
+        .header-title { font-size: 0.8rem; font-weight: 900; text-transform: uppercase; text-align: center; flex: 1; letter-spacing: 2px; }
+        .header-title span { color: var(--accent); display: block; font-size: 1rem; margin-top: -2px; }
+        .icon-btn { background: var(--secondary); border: none; width: 40px; height: 40px; border-radius: 12px; font-size: 1.1rem; display: flex; justify-content: center; align-items: center; color: white; cursor: pointer; }
+
+        /* Arena Layout */
+        #game-arena { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; width: 100%; z-index: 10; }
+        #arena-circle { 
+            width: var(--arena-size); height: var(--arena-size); 
+            border: 4px solid var(--secondary); border-radius: 50%; 
+            position: relative; background: #1e293b; box-sizing: border-box;
+        }
+        .player-tag { position: absolute; width: var(--tag-size); height: var(--tag-size); background: var(--accent); color: #0f172a; border-radius: 50%; font-size: 1rem; font-weight: 900; display: flex; align-items: center; justify-content: center; border: 3px solid var(--secondary); transform: translate(-50%, -50%); z-index: 20; }
+        
+        /* Grid Alignment */
+        .player-btn { position: absolute; width: var(--btn-size); height: var(--btn-size); background: var(--accent); color: #0f172a; border: none; border-radius: 14px; font-weight: 900; font-size: 0.75rem; text-transform: uppercase; cursor: pointer; z-index: 50; transition: transform 0.1s; display: flex; align-items: center; justify-content: center; }
+        .player-btn:active { transform: scale(0.95); background: #fff; }
+        #ball { position: absolute; width: var(--ball-size); height: var(--ball-size); background: #fff; border-radius: 50%; z-index: 15; display: none; margin-top: -6px; margin-left: -6px; }
+
+        /* Modals */
+        .full-modal { position: fixed; inset: 0; background: var(--bg); display: flex; flex-direction: column; justify-content: center; align-items: center; z-index: 2000; padding: 20px; text-align: center; }
+        .game-title-large { font-size: 4.5rem; font-weight: 900; text-transform: uppercase; line-height: 0.85; margin-bottom: 25px; letter-spacing: -2px; }
+        .game-title-large span { color: var(--accent); display: block; }
+        
+        .grid-select-label { font-size: 0.8rem; font-weight: 900; text-transform: uppercase; color: var(--secondary); margin-bottom: 12px; display: block; letter-spacing: 2px; }
+        .grid-options { display: flex; justify-content: space-between; gap: 12px; width: 240px; margin-bottom: 20px; }
+        .grid-opt { flex: 1; padding: 14px 0; background: #1e293b; border: 2px solid transparent; border-radius: 12px; font-weight: bold; cursor: pointer; color: white; }
+        .grid-opt.active { border-color: var(--accent); color: var(--accent); background: rgba(245, 158, 11, 0.1); }
+
+        /* Spacious Defeat Screen */
+        .defeat-text { font-size: 3.25rem; font-weight: 900; text-transform: uppercase; color: #fff; margin-bottom: -5px; letter-spacing: 1px; }
+        .loser-text { font-size: 3.5rem; font-weight: 900; text-transform: uppercase; line-height: 0.9; color: var(--accent); }
+        .fun-caption { 
+            font-size: 1rem; font-weight: 600; color: var(--secondary); 
+            margin: 30px 0 50px; /* 30px header gap / 50px button gap */
+            text-transform: uppercase; letter-spacing: 1px; line-height: 1.4;
+        }
+
+        .action-btn { width: 100%; max-width: 280px; padding: 20px 0; border-radius: 16px; border: none; font-weight: 900; font-size: 1.1rem; text-transform: uppercase; cursor: pointer; margin-top: 15px; }
+        .start-btn { background: var(--accent); color: #0f172a; }
+        .secondary-btn { background: var(--secondary); color: white; }
+
+        #confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 1999; }
+        #countdown { position: absolute; font-size: 8rem; font-weight: 900; color: var(--accent); z-index: 1000; pointer-events: none; display: none; }
+        
+        /* Confirmation */
+        #confirm-modal { display: none; }
+        .confirm-card { background: #1e293b; padding: 30px; border-radius: 24px; width: 280px; border: 2px solid var(--secondary); }
+        .confirm-title { font-weight: 900; text-transform: uppercase; margin-bottom: 20px; letter-spacing: 1px; font-size: 1.2rem; }
+        .confirm-grid { display: flex; gap: 10px; }
+        .confirm-btn { flex: 1; padding: 15px; border-radius: 12px; border: none; font-weight: 900; text-transform: uppercase; cursor: pointer; }
+        .btn-no { background: var(--secondary); color: white; }
+        .btn-yes { background: var(--accent); color: #0f172a; }
+    </style>
+</head>
+<body>
+<div id="main-wrapper">
+    <div id="overlay" class="full-modal">
+        <div class="game-title-large">TAP TAP<span>DEFENCE</span></div>
+        <span class="grid-select-label">Select Number of Players</span>
+        <div class="grid-options">
+            <button class="grid-opt active" data-val="2">2</button>
+            <button class="grid-opt" data-val="4">4</button>
+            <button class="grid-opt" data-val="6">6</button>
+        </div>
+        <button class="action-btn start-btn" id="start-btn">START</button>
+        <button class="action-btn secondary-btn" onclick="toggleRules(true)">HOW TO PLAY</button>
+    </div>
+
+    <div id="rules-modal" class="full-modal" style="display:none;">
+        <div class="rules-card" style="background: #1e293b; padding: 30px; border-radius: 24px; text-align: left; max-width: 300px; margin-bottom: 20px; border: 2px solid var(--secondary);">
+            <h3 style="color: var(--accent); margin-top: 0; text-transform: uppercase;">OBJECTIVE</h3>
+            <p style="font-size: 0.85rem; line-height: 1.6; opacity: 0.8; margin-bottom: 0;">
+                1. Repel the ball by tapping your corner button with speed.<br>
+                2. Protect your numbered tag at all costs to avoid elimination.
+            </p>
+        </div>
+        <button class="action-btn start-btn" onclick="toggleRules(false)">GOT IT</button>
+    </div>
+
+    <div id="defeat-popup" class="full-modal" style="display:none;">
+        <div class="defeat-text">TOO SLOW</div>
+        <div class="loser-text">PLAYER <span id="loser-num">1</span></div>
+        <div class="fun-caption">Your fingers are in slow-mo.<br>Pick up the pace!</div>
+        <button class="action-btn start-btn" onclick="playAgain()">PLAY AGAIN</button>
+        <button class="action-btn secondary-btn" onclick="location.href='index.html'">BACK TO HOME</button>
+    </div>
+
+    <div id="confirm-modal" class="full-modal">
+        <div class="confirm-card">
+            <div class="confirm-title">RESTART MATCH?</div>
+            <div class="confirm-grid">
+                <button class="confirm-btn btn-no" onclick="handleConfirm(false)">NO</button>
+                <button class="confirm-btn btn-yes" onclick="handleConfirm(true)">YES</button>
+            </div>
+        </div>
+    </div>
+
+    <canvas id="confetti-canvas"></canvas>
+
+    <header id="control-pane">
+        <div class="header-side"><button class="icon-btn" onclick="location.href='index.html'">🏠</button></div>
+        <div class="header-title">TAP TAP<span>DEFENCE</span></div>
+        <div class="header-side right"><button class="icon-btn" onclick="showConfirm()">↻</button></div>
+    </header>
+
+    <div id="game-arena">
+        <div id="countdown"></div>
+        <div id="arena-circle"><div id="ball"></div></div>
+        <div id="buttons-container"></div>
+    </div>
+</div>
+
+<script>
+    const arena = document.getElementById('arena-circle'), ball = document.getElementById('ball');
+    const overlay = document.getElementById('overlay'), startBtn = document.getElementById('start-btn');
+    const countdownEl = document.getElementById('countdown'), btnContainer = document.getElementById('buttons-container');
+    const defPopup = document.getElementById('defeat-popup'), loseNum = document.getElementById('loser-num');
+    const confirmMod = document.getElementById('confirm-modal'), canvas = document.getElementById('confetti-canvas'), ctx = canvas.getContext('2d');
+
+    let playerCount = 2, ballPos = { x: 150, y: 150 }, ballVel = { x: 0, y: 0 }, gameActive = false, tags = [];
+    const arenaRadius = 150;
+    let consecutiveTracker = { playerId: null, count: 0 };
+
+    function toggleRules(show) { document.getElementById('rules-modal').style.display = show ? 'flex' : 'none'; }
+    function showConfirm() { confirmMod.style.display = 'flex'; }
+
+    /* Arena Restart Logic: Bypasses Home */
+    function handleConfirm(yes) { 
+        confirmMod.style.display = 'none'; 
+        if(yes) {
+            gameActive = false; // Stop current loop
+            particles = []; ctx.clearRect(0,0,canvas.width,canvas.height); 
+            startSequence(); 
+        } 
+    }
+
+    document.querySelectorAll('.grid-opt').forEach(opt => {
+        opt.onclick = () => {
+            document.querySelectorAll('.grid-opt').forEach(o => o.classList.remove('active'));
+            opt.classList.add('active'); playerCount = parseInt(opt.dataset.val);
+        };
+    });
+
+    function setupArena() {
+        btnContainer.innerHTML = ''; tags = []; arena.querySelectorAll('.player-tag').forEach(t => t.remove());
+        const TOP = '30px', BTM = '30px', SIDE = '25px', MID = '50%';
+        let layout = [];
+        if (playerCount === 2) {
+            layout = [{ pos: { top: TOP, left: SIDE }, angle: -Math.PI * 0.75 }, { pos: { bottom: BTM, right: SIDE }, angle: Math.PI * 0.25 }];
+        } else if (playerCount === 4) {
+            layout = [{ pos: { top: TOP, left: SIDE }, angle: -Math.PI * 0.75 }, { pos: { top: TOP, right: SIDE }, angle: -Math.PI * 0.25 }, { pos: { bottom: BTM, right: SIDE }, angle: Math.PI * 0.25 }, { pos: { bottom: BTM, left: SIDE }, angle: Math.PI * 0.75 }];
+        } else {
+            /* 6-Player Standard Alignment */
+            layout = [{ pos: { top: TOP, left: MID, transform: 'translateX(-50%)' }, angle: -Math.PI/2 }, { pos: { top: TOP, right: SIDE }, angle: -Math.PI * 0.166 }, { pos: { bottom: BTM, right: SIDE }, angle: Math.PI * 0.166 }, { pos: { bottom: BTM, left: MID, transform: 'translateX(-50%)' }, angle: Math.PI/2 }, { pos: { bottom: BTM, left: SIDE }, angle: Math.PI * 0.833 }, { pos: { top: TOP, left: SIDE }, angle: -Math.PI * 0.833 }];
+        }
+
+        const tagStep = (Math.PI * 2) / playerCount, tagOff = playerCount === 6 ? -Math.PI/2 : -Math.PI * 0.75;
+        layout.forEach((config, i) => {
+            const btn = document.createElement('button'); btn.className = 'player-btn'; btn.innerText = 'TAP';
+            const pId = i + 1;
+            Object.assign(btn.style, config.pos);
+            btn.addEventListener('touchstart', (e) => { if (e.cancelable) e.preventDefault(); pushBall(config.angle, pId); }, { passive: false });
+            btn.onmousedown = () => pushBall(config.angle, pId);
+            btnContainer.appendChild(btn);
+
+            const tAng = tagOff + (i * tagStep), tag = document.createElement('div');
+            tag.className = 'player-tag'; tag.innerText = pId;
+            const tx = 150 + Math.cos(tAng) * arenaRadius, ty = 150 + Math.sin(tAng) * arenaRadius;
+            tag.style.left = `${tx}px`; tag.style.top = `${ty}px`;
+            arena.appendChild(tag); tags.push({ x: tx, y: ty, id: pId });
+        });
+    }
+
+    function startSequence() {
+        overlay.style.display = 'none'; defPopup.style.display = 'none';
+        /* Ball & State Reset */
+        ball.style.display = 'none'; ballPos = { x: 150, y: 150 }; ballVel = { x: 0, y: 0 };
+        consecutiveTracker = { playerId: null, count: 0 };
+        updateBall(); setupArena(); countdownEl.style.display = 'block';
+        let count = 3; countdownEl.innerText = count;
+        const timer = setInterval(() => {
+            count--; if (count > 0) countdownEl.innerText = count; else if (count === 0) countdownEl.innerText = "GO!";
+            else { clearInterval(timer); countdownEl.style.display = 'none'; ball.style.display = 'block'; gameActive = true; requestAnimationFrame(update); }
+        }, 1000);
+    }
+
+    function playAgain() { particles = []; ctx.clearRect(0,0,canvas.width,canvas.height); startSequence(); }
+
+    function pushBall(ang, pId) { 
+        if (!gameActive) return;
+        if (consecutiveTracker.playerId === pId) { consecutiveTracker.count++; } else { consecutiveTracker.playerId = pId; consecutiveTracker.count = 1; }
+        if (consecutiveTracker.count === 4) { consecutiveTracker.count = 0; return; }
+        ballVel.x -= Math.cos(ang) * 1.6875; ballVel.y -= Math.sin(ang) * 1.6875; 
+    }
+
+    function update() {
+        if (!gameActive) return;
+        ballPos.x += ballVel.x; ballPos.y += ballVel.y; ballVel.x *= 0.96; ballVel.y *= 0.96;
+        tags.forEach(t => { if (Math.sqrt(Math.pow(ballPos.x - t.x, 2) + Math.pow(ballPos.y - t.y, 2)) < 22) endGame(t.id); });
+        const adx = ballPos.x - 150, ady = ballPos.y - 150, adist = Math.sqrt(adx*adx + ady*ady);
+        if (adist > arenaRadius - 6) {
+            const ang = Math.atan2(ady, adx), nX = Math.cos(ang), nY = Math.sin(ang), dot = ballVel.x * nX + ballVel.y * nY;
+            ballVel.x -= 2 * dot * nX; ballVel.y -= 2 * dot * nY;
+            ballPos.x = 150 + nX * (arenaRadius - 7); ballPos.y = 150 + nY * (arenaRadius - 7);
+        }
+        updateBall(); requestAnimationFrame(update);
+    }
+
+    function updateBall() { ball.style.left = `${ballPos.x}px`; ball.style.top = `${ballPos.y}px`; }
+    function endGame(loserId) { gameActive = false; loseNum.innerText = loserId; defPopup.style.display = 'flex'; initConfetti(); }
+
+    let particles = [];
+    function initConfetti() {
+        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+        for (let i = 0; i < 100; i++) particles.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height - canvas.height, r: Math.random()*6+2, d: Math.random()*10, color: `hsl(${Math.random()*360}, 70%, 50%)`, tilt: Math.random()*10 });
+        renderConfetti();
+    }
+    function renderConfetti() {
+        ctx.clearRect(0,0,canvas.width,canvas.height);
+        particles.forEach(p => { p.y += Math.cos(p.d) + 1 + p.r/2; p.x += Math.sin(p.d); ctx.beginPath(); ctx.lineWidth = p.r; ctx.strokeStyle = p.color; ctx.moveTo(p.x + p.tilt + p.r/2, p.y); ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r/2); ctx.stroke(); });
+        if (defPopup.style.display === 'flex') requestAnimationFrame(renderConfetti);
+    }
+    startBtn.onclick = startSequence;
+</script>
+</body>
+</html>
+
