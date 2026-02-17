@@ -19,13 +19,9 @@
         .header-title span { color: var(--accent); display: block; font-size: 1rem; margin-top: -2px; }
         .icon-btn { background: var(--secondary); border: none; width: 40px; height: 40px; border-radius: 12px; font-size: 1.1rem; display: flex; justify-content: center; align-items: center; color: white; cursor: pointer; }
 
-        /* Arena Layout */
+        /* Arena */
         #game-arena { flex: 1; position: relative; display: flex; justify-content: center; align-items: center; width: 100%; z-index: 10; }
-        #arena-circle { 
-            width: var(--arena-size); height: var(--arena-size); 
-            border: 4px solid var(--secondary); border-radius: 50%; 
-            position: relative; background: #1e293b; box-sizing: border-box;
-        }
+        #arena-circle { width: var(--arena-size); height: var(--arena-size); border: 4px solid var(--secondary); border-radius: 50%; position: relative; background: #1e293b; box-sizing: border-box; }
         .player-tag { position: absolute; width: var(--tag-size); height: var(--tag-size); background: var(--accent); color: #0f172a; border-radius: 50%; font-size: 1rem; font-weight: 900; display: flex; align-items: center; justify-content: center; border: 3px solid var(--secondary); transform: translate(-50%, -50%); z-index: 20; }
         
         /* Grid Alignment */
@@ -43,14 +39,10 @@
         .grid-opt { flex: 1; padding: 14px 0; background: #1e293b; border: 2px solid transparent; border-radius: 12px; font-weight: bold; cursor: pointer; color: white; }
         .grid-opt.active { border-color: var(--accent); color: var(--accent); background: rgba(245, 158, 11, 0.1); }
 
-        /* Spacious Defeat Screen */
+        /* Spaced Defeat Popup */
         .defeat-text { font-size: 3.25rem; font-weight: 900; text-transform: uppercase; color: #fff; margin-bottom: -5px; letter-spacing: 1px; }
         .loser-text { font-size: 3.5rem; font-weight: 900; text-transform: uppercase; line-height: 0.9; color: var(--accent); }
-        .fun-caption { 
-            font-size: 1rem; font-weight: 600; color: var(--secondary); 
-            margin: 30px 0 50px; /* 30px header gap / 50px button gap */
-            text-transform: uppercase; letter-spacing: 1px; line-height: 1.4;
-        }
+        .fun-caption { font-size: 1rem; font-weight: 600; color: var(--secondary); margin: 30px 0 50px; text-transform: uppercase; letter-spacing: 1px; line-height: 1.4; }
 
         .action-btn { width: 100%; max-width: 280px; padding: 20px 0; border-radius: 16px; border: none; font-weight: 900; font-size: 1.1rem; text-transform: uppercase; cursor: pointer; margin-top: 15px; }
         .start-btn { background: var(--accent); color: #0f172a; }
@@ -99,7 +91,7 @@
         <div class="loser-text">PLAYER <span id="loser-num">1</span></div>
         <div class="fun-caption">Your fingers are in slow-mo.<br>Pick up the pace!</div>
         <button class="action-btn start-btn" onclick="playAgain()">PLAY AGAIN</button>
-        <button class="action-btn secondary-btn" onclick="location.href='index.html'">BACK TO HOME</button>
+        <button class="action-btn secondary-btn" onclick="goToGameHome()">BACK TO HOME</button>
     </div>
 
     <div id="confirm-modal" class="full-modal">
@@ -115,7 +107,7 @@
     <canvas id="confetti-canvas"></canvas>
 
     <header id="control-pane">
-        <div class="header-side"><button class="icon-btn" onclick="location.href='index.html'">🏠</button></div>
+        <div class="header-side"><button class="icon-btn" onclick="goToGameHome()">🏠</button></div>
         <div class="header-title">TAP TAP<span>DEFENCE</span></div>
         <div class="header-side right"><button class="icon-btn" onclick="showConfirm()">↻</button></div>
     </header>
@@ -141,14 +133,19 @@
     function toggleRules(show) { document.getElementById('rules-modal').style.display = show ? 'flex' : 'none'; }
     function showConfirm() { confirmMod.style.display = 'flex'; }
 
-    /* Arena Restart Logic: Bypasses Home */
+    /* Internal Navigation: Returns to player selection */
+    function goToGameHome() {
+        gameActive = false;
+        defPopup.style.display = 'none';
+        confirmMod.style.display = 'none';
+        overlay.style.display = 'flex';
+        particles = []; ctx.clearRect(0,0,canvas.width,canvas.height);
+        ball.style.display = 'none';
+    }
+
     function handleConfirm(yes) { 
         confirmMod.style.display = 'none'; 
-        if(yes) {
-            gameActive = false; // Stop current loop
-            particles = []; ctx.clearRect(0,0,canvas.width,canvas.height); 
-            startSequence(); 
-        } 
+        if(yes) { gameActive = false; particles = []; ctx.clearRect(0,0,canvas.width,canvas.height); startSequence(); } 
     }
 
     document.querySelectorAll('.grid-opt').forEach(opt => {
@@ -167,7 +164,6 @@
         } else if (playerCount === 4) {
             layout = [{ pos: { top: TOP, left: SIDE }, angle: -Math.PI * 0.75 }, { pos: { top: TOP, right: SIDE }, angle: -Math.PI * 0.25 }, { pos: { bottom: BTM, right: SIDE }, angle: Math.PI * 0.25 }, { pos: { bottom: BTM, left: SIDE }, angle: Math.PI * 0.75 }];
         } else {
-            /* 6-Player Standard Alignment */
             layout = [{ pos: { top: TOP, left: MID, transform: 'translateX(-50%)' }, angle: -Math.PI/2 }, { pos: { top: TOP, right: SIDE }, angle: -Math.PI * 0.166 }, { pos: { bottom: BTM, right: SIDE }, angle: Math.PI * 0.166 }, { pos: { bottom: BTM, left: MID, transform: 'translateX(-50%)' }, angle: Math.PI/2 }, { pos: { bottom: BTM, left: SIDE }, angle: Math.PI * 0.833 }, { pos: { top: TOP, left: SIDE }, angle: -Math.PI * 0.833 }];
         }
 
@@ -190,7 +186,6 @@
 
     function startSequence() {
         overlay.style.display = 'none'; defPopup.style.display = 'none';
-        /* Ball & State Reset */
         ball.style.display = 'none'; ballPos = { x: 150, y: 150 }; ballVel = { x: 0, y: 0 };
         consecutiveTracker = { playerId: null, count: 0 };
         updateBall(); setupArena(); countdownEl.style.display = 'block';
@@ -202,43 +197,13 @@
     }
 
     function playAgain() { particles = []; ctx.clearRect(0,0,canvas.width,canvas.height); startSequence(); }
-
-    function pushBall(ang, pId) { 
-        if (!gameActive) return;
-        if (consecutiveTracker.playerId === pId) { consecutiveTracker.count++; } else { consecutiveTracker.playerId = pId; consecutiveTracker.count = 1; }
-        if (consecutiveTracker.count === 4) { consecutiveTracker.count = 0; return; }
-        ballVel.x -= Math.cos(ang) * 1.6875; ballVel.y -= Math.sin(ang) * 1.6875; 
-    }
-
-    function update() {
-        if (!gameActive) return;
-        ballPos.x += ballVel.x; ballPos.y += ballVel.y; ballVel.x *= 0.96; ballVel.y *= 0.96;
-        tags.forEach(t => { if (Math.sqrt(Math.pow(ballPos.x - t.x, 2) + Math.pow(ballPos.y - t.y, 2)) < 22) endGame(t.id); });
-        const adx = ballPos.x - 150, ady = ballPos.y - 150, adist = Math.sqrt(adx*adx + ady*ady);
-        if (adist > arenaRadius - 6) {
-            const ang = Math.atan2(ady, adx), nX = Math.cos(ang), nY = Math.sin(ang), dot = ballVel.x * nX + ballVel.y * nY;
-            ballVel.x -= 2 * dot * nX; ballVel.y -= 2 * dot * nY;
-            ballPos.x = 150 + nX * (arenaRadius - 7); ballPos.y = 150 + nY * (arenaRadius - 7);
-        }
-        updateBall(); requestAnimationFrame(update);
-    }
-
+    function pushBall(ang, pId) { if (!gameActive) return; if (consecutiveTracker.playerId === pId) { consecutiveTracker.count++; } else { consecutiveTracker.playerId = pId; consecutiveTracker.count = 1; } if (consecutiveTracker.count === 4) { consecutiveTracker.count = 0; return; } ballVel.x -= Math.cos(ang) * 1.6875; ballVel.y -= Math.sin(ang) * 1.6875; }
+    function update() { if (!gameActive) return; ballPos.x += ballVel.x; ballPos.y += ballVel.y; ballVel.x *= 0.96; ballVel.y *= 0.96; tags.forEach(t => { if (Math.sqrt(Math.pow(ballPos.x - t.x, 2) + Math.pow(ballPos.y - t.y, 2)) < 22) endGame(t.id); }); const adx = ballPos.x - 150, ady = ballPos.y - 150, adist = Math.sqrt(adx*adx + ady*ady); if (adist > arenaRadius - 6) { const ang = Math.atan2(ady, adx), nX = Math.cos(ang), nY = Math.sin(ang), dot = ballVel.x * nX + ballVel.y * nY; ballVel.x -= 2 * dot * nX; ballVel.y -= 2 * dot * nY; ballPos.x = 150 + nX * (arenaRadius - 7); ballPos.y = 150 + nY * (arenaRadius - 7); } updateBall(); requestAnimationFrame(update); }
     function updateBall() { ball.style.left = `${ballPos.x}px`; ball.style.top = `${ballPos.y}px`; }
     function endGame(loserId) { gameActive = false; loseNum.innerText = loserId; defPopup.style.display = 'flex'; initConfetti(); }
-
-    let particles = [];
-    function initConfetti() {
-        canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-        for (let i = 0; i < 100; i++) particles.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height - canvas.height, r: Math.random()*6+2, d: Math.random()*10, color: `hsl(${Math.random()*360}, 70%, 50%)`, tilt: Math.random()*10 });
-        renderConfetti();
-    }
-    function renderConfetti() {
-        ctx.clearRect(0,0,canvas.width,canvas.height);
-        particles.forEach(p => { p.y += Math.cos(p.d) + 1 + p.r/2; p.x += Math.sin(p.d); ctx.beginPath(); ctx.lineWidth = p.r; ctx.strokeStyle = p.color; ctx.moveTo(p.x + p.tilt + p.r/2, p.y); ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r/2); ctx.stroke(); });
-        if (defPopup.style.display === 'flex') requestAnimationFrame(renderConfetti);
-    }
+    let particles = []; function initConfetti() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; for (let i = 0; i < 100; i++) particles.push({ x: Math.random()*canvas.width, y: Math.random()*canvas.height - canvas.height, r: Math.random()*6+2, d: Math.random()*10, color: `hsl(${Math.random()*360}, 70%, 50%)`, tilt: Math.random()*10 }); renderConfetti(); }
+    function renderConfetti() { ctx.clearRect(0,0,canvas.width,canvas.height); particles.forEach(p => { p.y += Math.cos(p.d) + 1 + p.r/2; p.x += Math.sin(p.d); ctx.beginPath(); ctx.lineWidth = p.r; ctx.strokeStyle = p.color; ctx.moveTo(p.x + p.tilt + p.r/2, p.y); ctx.lineTo(p.x + p.tilt, p.y + p.tilt + p.r/2); ctx.stroke(); }); if (defPopup.style.display === 'flex') requestAnimationFrame(renderConfetti); }
     startBtn.onclick = startSequence;
 </script>
 </body>
 </html>
-
